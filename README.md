@@ -42,8 +42,8 @@ FMeshDescription Meshes::SimpleQuad()
 
 	// the same as:
 	
-	// triangles.AddTriangle(0, 1, 2);
-	// triangles.AddTriangle(2, 3, 0);
+	// triangles.AddTriangle(0, 1, 3);
+	// triangles.AddTriangle(1, 3, 2);
 
 	return description;
 }
@@ -52,17 +52,30 @@ FMeshDescription Meshes::SimpleQuad()
 ### Usage with UStaticMeshComponetn with Nanite enabled
 
 ```cpp
-_meshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+// Sets default values
+AQuad::AQuad()
+{
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
 
-UStaticMesh::FBuildMeshDescriptionsParams mdParams;
-mdParams.bBuildSimpleCollision = true;
+	_meshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+}
 
-FMeshDescription description = StaticMeshes::SteinerGrid(20, 20, 50); // or your custom function
+// Called when the game starts or when spawned
+void AQuad::BeginPlay()
+{
+	Super::BeginPlay();
 
-UStaticMesh* mesh = NewObject<UStaticMesh>(this, FName(TEXT("mesh")));
-mesh->GetStaticMaterials().Add(FStaticMaterial());
-mesh->NaniteSettings.bEnabled = true;
-mesh->BuildFromMeshDescriptions({&description}, mdParams);
+	UStaticMesh::FBuildMeshDescriptionsParams mdParams;
+	mdParams.bBuildSimpleCollision = true;
 
-_meshComponent->SetStaticMesh(mesh);
+	FMeshDescription description = Meshes::SimpleQuad(); // replace it with any mesh you want
+
+	UStaticMesh* mesh = NewObject<UStaticMesh>(this, FName(TEXT("mesh")));
+	mesh->GetStaticMaterials().Add(FStaticMaterial());
+	mesh->NaniteSettings.bEnabled = true;
+	mesh->BuildFromMeshDescriptions({ &description }, mdParams);
+
+	_meshComponent->SetStaticMesh(mesh);
+}
 ```
