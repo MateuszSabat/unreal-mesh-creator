@@ -28,6 +28,8 @@ void Meshes::Triangles::AddHex(FVertexInstanceID v0, FVertexInstanceID v1, FVert
 
 Meshes::InitializedDescription Meshes::Init(FMeshDescription& description, int vertices, int triangles)
 {
+	FStaticMeshAttributes(description).Register();
+
 	description.ReserveNewVertices(vertices);
 	description.ReserveNewVertexInstances(vertices);
 
@@ -55,14 +57,27 @@ Meshes::InitializedDescription& Meshes::InitializedDescription::WithPositions(TA
 
 Meshes::InitializedDescription& Meshes::InitializedDescription::WithUVs(TArrayView<FVector2f>& uv)
 {
-	uv = _description.VertexInstanceAttributes().GetAttributesRef<FVector2f>(MeshAttribute::VertexInstance::TextureCoordinate).GetRawArray();
-	return *this;
+	return WithVertexInstanceAttributes<FVector2f>(uv, MeshAttribute::VertexInstance::TextureCoordinate);
 }
 
 Meshes::InitializedDescription& Meshes::InitializedDescription::WithNormals(TArrayView<FVector3f>& normals)
 {
-	normals = _description.VertexInstanceAttributes().GetAttributesRef<FVector3f>(MeshAttribute::VertexInstance::Normal).GetRawArray();
-	return *this;
+	return WithVertexInstanceAttributes<FVector3f>(normals, MeshAttribute::VertexInstance::Normal);
+}
+
+Meshes::InitializedDescription& Meshes::InitializedDescription::WithTangents(TArrayView<FVector3f>& tangents)
+{
+	return WithVertexInstanceAttributes<FVector3f>(tangents, MeshAttribute::VertexInstance::Tangent);
+}
+
+Meshes::InitializedDescription& Meshes::InitializedDescription::WithColors(TArrayView<FVector4f>& colors)
+{
+	return WithVertexInstanceAttributes<FVector4f>(colors, MeshAttribute::VertexInstance::Color);
+}
+
+Meshes::InitializedDescription& Meshes::InitializedDescription::WithBinormalSigns(TArrayView<float>& binormalSigns)
+{
+	return WithVertexInstanceAttributes<float>(binormalSigns, MeshAttribute::VertexInstance::BinormalSign);
 }
 
 Meshes::InitializedDescription& Meshes::InitializedDescription::WithTriangles(Triangles& triangles, FPolygonGroupID id)
@@ -72,10 +87,51 @@ Meshes::InitializedDescription& Meshes::InitializedDescription::WithTriangles(Tr
 }
 
 
-FMeshDescription StaticMeshes::Grid(int x, int y, float cellSize)
+FMeshDescription Meshes::SimpleQuad()
 {
 	FMeshDescription description;
-	FStaticMeshAttributes(description).Register();
+
+	TArrayView<FVector3f> positions;
+	TArrayView<FVector2f> uvs;
+	TArrayView<FVector3f> normals;
+	Meshes::Triangles triangles;
+
+	int vertexCount = 4;
+	int trianglesCount = 2;
+	Meshes::Init(description, vertexCount, trianglesCount)
+		.WithPositions(positions)
+		.WithUVs(uvs)
+		.WithNormals(normals)
+		.WithTriangles(triangles, 0);
+
+	positions[0] = FVector3f(-100, -100, 0);
+	positions[1] = FVector3f(-100, 100, 0);
+	positions[2] = FVector3f(100, -100, 0);
+	positions[3] = FVector3f(100, 100, 0);
+
+	normals[0] = FVector3f(0, 0, 1);
+	normals[1] = FVector3f(0, 0, 1);
+	normals[2] = FVector3f(0, 0, 1);
+	normals[3] = FVector3f(0, 0, 1);
+
+	uvs[0] = FVector2f(0, 0);
+	uvs[1] = FVector2f(0, 1);
+	uvs[2] = FVector2f(1, 0);
+	uvs[3] = FVector2f(1, 1);
+
+	triangles.AddQuad(0, 1, 3, 2);
+
+	// the same as:
+	
+	// triangles.AddTriangle(0, 1, 2);
+	// triangles.AddTriangle(2, 3, 0);
+
+	return description;
+}
+
+FMeshDescription Meshes::Grid(int x, int y, float cellSize)
+{
+	FMeshDescription description;
 
 	TArrayView<FVector3f> positions;
 	TArrayView<FVector2f> uvs;
@@ -117,10 +173,9 @@ FMeshDescription StaticMeshes::Grid(int x, int y, float cellSize)
 	return description;
 }
 
-FMeshDescription StaticMeshes::SteinerGrid(int x, int y, float cellSize)
+FMeshDescription Meshes::SteinerGrid(int x, int y, float cellSize)
 {
 	FMeshDescription description;
-	FStaticMeshAttributes(description).Register();
 
 	TArrayView<FVector3f> positions;
 	TArrayView<FVector2f> uvs;
@@ -178,10 +233,9 @@ FMeshDescription StaticMeshes::SteinerGrid(int x, int y, float cellSize)
 	return description;
 }
 
-FMeshDescription StaticMeshes::Cube(float size)
+FMeshDescription Meshes::Cube(float size)
 {
 	FMeshDescription description;
-	FStaticMeshAttributes(description).Register();
 
 	TArrayView<FVector3f> positions;
 	TArrayView<FVector3f> normals;
@@ -226,13 +280,12 @@ FMeshDescription StaticMeshes::Cube(float size)
 	return description;
 }
 
-FMeshDescription StaticMeshes::Sphere(float radius, int density)
+FMeshDescription Meshes::Sphere(float radius, int density)
 {
 	density *= 2;
 	int parallels = (density - 2) / 2;
 
 	FMeshDescription description;
-	FStaticMeshAttributes(description).Register();
 
 	TArrayView<FVector3f> positions;
 	TArrayView<FVector3f> normals;
