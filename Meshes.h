@@ -35,16 +35,31 @@ namespace Meshes
 		InitializedDescription& WithPositions(TArrayView<FVector3f>& positions);
 		InitializedDescription& WithUVs(TArrayView<FVector2f>& uv);
 		InitializedDescription& WithNormals(TArrayView<FVector3f>& normals);
+		InitializedDescription& WithTangents(TArrayView<FVector3f>& tangents);
+		InitializedDescription& WithColors(TArrayView<FVector4f>& colors);
+		InitializedDescription& WithBinormalSigns(TArrayView<float>& binormalSigns);
+
 		InitializedDescription& WithTriangles(Triangles& triangles, FPolygonGroupID id);
+
+	private:
+		template<typename T>
+		InitializedDescription& WithVertexInstanceAttributes(TArrayView<T>& arrayView, const FName name);
 	};
 
 	InitializedDescription Init(FMeshDescription& description, int vertices, int triangles);
-}
 
-namespace StaticMeshes
-{
+	FMeshDescription SimpleQuad();
 	FMeshDescription Grid(int x, int y, float cellSize);
 	FMeshDescription SteinerGrid(int x, int y, float cellSize);
 	FMeshDescription Cube(float size);
 	FMeshDescription Sphere(float radius, int density);
+}
+
+// template implementation
+
+template<typename T>
+inline Meshes::InitializedDescription& Meshes::InitializedDescription::WithVertexInstanceAttributes(TArrayView<T>& arrayView, const FName name)
+{
+	arrayView = _description.VertexInstanceAttributes().GetAttributesRef<T>(name).GetRawArray();
+	return *this;
 }
